@@ -1,51 +1,56 @@
-#include <math.h>
-#include <stdlib.h>
 #include "metropolis.h"
+#include <math.h>
 
-//=====================================================================================
 /*
-mc_step(): does 1 monte-carlo step per spin; performs 1 iteration of the Metropolis-Hastings algorithm
-
-
-*/
-//=====================================================================================
-void metro_sweep(double J, double T, int spin[XLENGTH][YLENGTH])
+ * Creates look-up table for boltzmann probabilities for spin-flips for 2D square lattice
+ */
+void probLookUp(double T, double J, double **probs)
 {
-	int xUp = 0 , xDwn = 0, yUp = 0, yDwn = 0;
+	for(int i = -8; i <= 8; i += 4)
+	{
+		probs[i + 8][0] = exp(-(i * J)/T);
+		probs[i + 8][2] = exp(-(i * J)/T);
+	}
+}
+
+/*
+ * Does 1 monte-carlo step per spin; performs 1 iteration of the Metropolis-Hastings algorithm
+ * 
+ * 
+ * 
+*/
+void mc_step_per_spin(int **spin, double **probs)
+{
+	double prob;
+	
+	unsigned long seed = 1UL;
+	
+	
+	
 	for(int x = 0; x < XLENGTH; x++)
 	{
 		for(int y = 0; y < YLENGTH; y++)
 		{
 			//==========Periodic-Boundary-Conditions==========
-            if (x < XLENGTH - 1)
-				xUp = x + 1;
-			else
-				xUp = 0;
+			int xUp = (x == XLENGTH - 1) ? 0 : x + 1;
+			int xDwn = (x == 0) ? XLENGTH - 1 : x - 1;
+			int yUp = (y == YLENGTH - 1) ? 0 : y - 1;
+			int yDwn = (y == 0) ? YLENGTH - 1: y - 1;
 			
-			if (x == 0)
-				xDwn = XLENGTH - 1;
-			else
-				xDwn = x - 1;
+			int deltaH = (int)(2 * spin[x][y] * (spin[xUp][y] + spin[xDwn][y] + spin[x][yUp] + spin[x][yDwn]));
+			prob = probs[8 + deltaH][1 + spin[x][y]]; //access look-up table
 			
-			if (y < YLENGTH - 1)
-				yDwn = y + 1;
-			else
-				yDwn = 0;
-
-			if (y == 0)
-				yUp = YLENGTH - 1;
-			else
-				yUp = y - 1;
-				
-			//not sure if postFlipE should be multiplied by 0.5 or not
-			double postFlipE = J*((spin[x][y]*spin[xUp][y]) + (spin[x][y]*spin[xDwn][y]) + (spin[x][y]*spin[x][yUp]) + (spin[x][y]*spin[x][yDwn]));
-			double deltaH = 2* postFlipE;
-			double prob = exp(-deltaH/T);
-			double randNum = (double)rand()/((double)RAND_MAX);
+			gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2); //allocates memory for random number generator
+			gsl_rng_set(r, seed); //seeds random number generator
+			
+			double randNum = gsl_rng_uniform(r); 
+			
 			if(deltaH < 0 || prob < randNum)
 			{
 				spin[x][y] *= -1;
 			}
+			
+			gsl_rng_free(r);
 		}
 	}
 }	

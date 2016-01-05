@@ -1,25 +1,23 @@
 #include <stdio.h>
-#include <time.h>
-#include <gsl/gsl_statistics.h>
-#include <gsl/gsl_rng.h>
-#include "observables.h"
-#include "metropolis.h"
+#include "metropolis.c"
+#include "matrixmem.c"
 
-void initialize(int spin[XLENGTH][YLENGTH]);
-//========================================================================
-/*
-initialize(): initializes spin[] with periodic boundary conditions.
+void coldStart(int**, int, int);
 
-spin[][]: array containing +/-1 to simulate a 2D configuration of spins
 
-CHANGE SPIN TO BE 1D ARRAY, MAKE LIFE EASIER
-*/
-//===================================INITIAL-CONDITIONS==============================
-void initialize(int spin[XLENGTH][YLENGTH])
-{
-	for(int x = 0; x < XLENGTH; x++)
+/* cold(): initializes spin[][] to all spins = +1.
+ * 
+ * spin[][]: array containing +/-1 to simulate a 2D configuration of spins
+ * 
+ * lx: horizontal length of spin[][]
+ * 
+ * ly: vertical length of spin[][]
+ */
+void coldStart(int **spin, int lx, int ly)
+{   
+	for(int x = 0; x < lx; x++)
 	{
-		for(int y = 0; y < YLENGTH; y++)
+		for(int y = 0; y < ly; y++)
 		{
 			spin[x][y] = 1;
 		}
@@ -28,28 +26,51 @@ void initialize(int spin[XLENGTH][YLENGTH])
 
 int main(void)
 {
-	int spin[XLENGTH][YLENGTH];
+	int** spin = matrix_allocate_int(XLENGTH, YLENGTH);
+	double** boltzProbs = matrix_allocate_double(17, 3);
+	
 	double J = 1.;
-	int ensembleSize = 9000;
-	double energy[ensembleSize], mags[ensembleSize];
-	double avEn = 0., avMag = 0., avMagSus = 0.;
-	srand(time(NULL));
+	double tmin = 1.;
+	
+	double tmax = 5.;
+	int numPoints= 100;
+	double tstep = (tmax - tmin)/numPoints;
+	//TESTING
+	
+	
+	int ensembleSize = 1024*128;
+	double avEn = 0., magnetization = 0., avMag = 0., avMag2 = 0., avMagSus = 0.;
+	int thermSteps = ensembleSize / 4;
   	FILE *fp;
 		fp = fopen("results2D.dat", "w");
-	for(double T = 1; T < 5; T += 0.1)
+	for(double T = tmin; T < tmax; T += tstep)
 	{
+		probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
 		for(int n = 0; n < ensembleSize; n++)
 		{
-			initialize(spin);
-			metro_sweep(J, T, spin);
-			energy[n] = hamil(J, spin)/(XLENGTH*YLENGTH);
-			mags[n] = mag(spin);
+			coldStart(spin, XLENGTH, YLENGTH);
+			
+			for(int s = 0; s < thermSteps; s++)//thermalizes configuration
+			{
+				mc_step_per_spin(spin, boltzProbs);
+			}
+			
+			avEn += (hamil(J, spin)/(XLENGTH*YLENGTH));
+			magnetization = mag(spin);
+			avMag += magnetization;
+			avMag2 += (magnetization*magnetization);
+			
 		}
-		avEn = gsl_stats_mean(energy, 1, ensembleSize);
-		avMag = gsl_stats_mean(mags, 1, ensembleSize);
-		avMagSus = magSus(ensembleSize, mags, T);
+		
+		avEn /= ensembleSize;
+		avMag /= ensembleSize;
+		avMag2 /= ensembleSize;
+		
+		avMagSus = (avMag2-(avMag*avMag))/T;
 		fprintf(fp, "%f %f %f %f\n", T, avEn, avMag, avMagSus); //statement will grow
+		printf("%f %f %f %f\n", T, avEn, avMag, avMagSus);
 	}	
-	
+	matrix_free_int(spin);
+	matrix_free_double(boltzProbs);
 	return 0;
 }

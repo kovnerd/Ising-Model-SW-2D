@@ -1,2 +1,4 @@
-#include "observables.h"
-void metro_sweep(double J, double T, int spin[XLENGTH][YLENGTH]);
+#include "observables.c"
+#include <gsl/gsl_rng.h>
+void probLookUp(double, double, double**);
+void mc_step_per_spin(int**, double**);
