@@ -26,8 +26,8 @@ void coldStart(int **spin, int lx, int ly)
 
 int main(void)
 {
-	int** spin = matrix_allocate_int(XLENGTH, YLENGTH);
-	double** boltzProbs = matrix_allocate_double(17, 3);
+	int **spin = matrix_allocate_int(XLENGTH, YLENGTH);
+	double **boltzProbs = matrix_allocate_double(17, 3);
 	
 	double J = 1.;
 	double tmin = 1.;
@@ -38,7 +38,7 @@ int main(void)
 	//TESTING
 	
 	
-	int ensembleSize = 1024*128;
+	int ensembleSize = 9000;
 	double avEn = 0., magnetization = 0., avMag = 0., avMag2 = 0., avMagSus = 0.;
 	int thermSteps = ensembleSize / 4;
   	FILE *fp;
@@ -46,15 +46,17 @@ int main(void)
 	for(double T = tmin; T < tmax; T += tstep)
 	{
 		probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
+		coldStart(spin, XLENGTH, YLENGTH);
+		
+		for(int ts = 0; ts < thermSteps; ts++)//thermalizes configuration
+		{
+			mc_step_per_spin(spin, boltzProbs);
+		}
+		
 		for(int n = 0; n < ensembleSize; n++)
 		{
-			coldStart(spin, XLENGTH, YLENGTH);
-			
-			for(int s = 0; s < thermSteps; s++)//thermalizes configuration
-			{
-				mc_step_per_spin(spin, boltzProbs);
-			}
-			
+			mc_step_per_spin(spin, boltzProbs);
+				
 			avEn += (hamil(J, spin)/(XLENGTH*YLENGTH));
 			magnetization = mag(spin);
 			avMag += magnetization;
@@ -70,7 +72,10 @@ int main(void)
 		fprintf(fp, "%f %f %f %f\n", T, avEn, avMag, avMagSus); //statement will grow
 		printf("%f %f %f %f\n", T, avEn, avMag, avMagSus);
 	}	
+	
 	matrix_free_int(spin);
 	matrix_free_double(boltzProbs);
+	fclose(fp);
+	
 	return 0;
 }
