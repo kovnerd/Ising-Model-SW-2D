@@ -28,12 +28,15 @@ int main(void)
 {
 	int **spin = matrix_allocate_int(XLENGTH, YLENGTH);
 	double **boltzProbs = matrix_allocate_double(17, 3);
+	unsigned long seed = ((unsigned long) time(NULL));
+	gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2); //allocates memory for random number generator
+	gsl_rng_set(r, seed); //seeds random number generator
 	
 	double J = 1.;
-	double tmin = 1.;
+	double tmin = 2.;
 	
-	double tmax = 5.;
-	int numPoints= 100;
+	double tmax = 3.;
+	int numPoints= 50;
 	double tstep = (tmax - tmin)/numPoints;
 	//TESTING
 	
@@ -50,18 +53,18 @@ int main(void)
 		
 		for(int ts = 0; ts < thermSteps; ts++)//thermalizes configuration
 		{
-			mc_step_per_spin(spin, boltzProbs);
+			mc_step_per_spin(spin, boltzProbs, r);
 		}
 		
 		for(int n = 0; n < ensembleSize; n++)
 		{
-			mc_step_per_spin(spin, boltzProbs);
-				
+			mc_step_per_spin(spin, boltzProbs, r);
 			energy = hamil(J, spin)/(XLENGTH*YLENGTH);
 			magnetization = mag(spin);
+			
 			avEn += energy;
 			avEn2 += (energy * energy);
-			avMag += magnetization;
+			avMag += fabs(magnetization);
 			avMag2 += (magnetization * magnetization);
 			
 		}
@@ -75,7 +78,7 @@ int main(void)
 		fprintf(fp, "%f %f %f %f\n", T, avEn, avMag, avMagSus); //statement will grow
 		printf("%f %f %f %f\n", T, avEn, avMag, avMagSus);
 	}	
-	
+	gsl_rng_free(r);
 	matrix_free_int(spin);
 	matrix_free_double(boltzProbs);
 	fclose(fp);

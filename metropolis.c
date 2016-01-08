@@ -14,12 +14,8 @@ void probLookUp(double T, double J, double **probs)
 	}
 }
 
-void mc_step(int **spin, double **probs)
-{
-	unsigned long seed = ((unsigned long) time(NULL)) + 1;
-	gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2); //allocates memory for random number generator
-	gsl_rng_set(r, seed); //seeds random number generator
-	
+void mc_step(int **spin, double **probs, gsl_rng *r)
+{	
 	int x = (int) (gsl_rng_uniform(r) * XLENGTH);
 	int y = (int) (gsl_rng_uniform(r) * YLENGTH);
 	
@@ -38,8 +34,6 @@ void mc_step(int **spin, double **probs)
 		spin[x][y] *= -1;
 		//printf("In mc_step: spin flip successful!\n");
 	}
-			
-	gsl_rng_free(r);
 }
 
 /*
@@ -48,10 +42,10 @@ void mc_step(int **spin, double **probs)
  * 
  * 
 */
-void mc_step_per_spin(int **spin, double **probs)
+void mc_step_per_spin(int **spin, double **probs, gsl_rng *r)
 {
 	for(int s = 0; s < XLENGTH*YLENGTH; s++)
 	{
-		mc_step(spin, probs);
+		mc_step(spin, probs, r);
 	}
 }	
