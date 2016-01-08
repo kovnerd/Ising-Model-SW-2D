@@ -23,6 +23,7 @@ double hamil(double J, int **spin)
 			int yAdj = (y == YLENGTH - 1) ? 0 : y + 1; //adjacent lattice site in the +y direction*
 			
 			spinProducts += spin[x][y] * (spin[xAdj][y] + spin[x][yAdj]);
+			
 		}
     }
 	

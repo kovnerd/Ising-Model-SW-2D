@@ -38,7 +38,7 @@ int main(void)
 	//TESTING
 	
 	
-	int ensembleSize = 9000;
+	int ensembleSize = 10;
 	double avEn = 0., magnetization = 0., avMag = 0., avMag2 = 0., avMagSus = 0.;
 	int thermSteps = ensembleSize / 4;
   	FILE *fp;
@@ -57,7 +57,7 @@ int main(void)
 		{
 			mc_step_per_spin(spin, boltzProbs);
 				
-			avEn += (hamil(J, spin)/(XLENGTH*YLENGTH));
+			avEn += hamil(J, spin)/(XLENGTH*YLENGTH);
 			magnetization = mag(spin);
 			avMag += magnetization;
 			avMag2 += (magnetization*magnetization);

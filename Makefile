@@ -4,7 +4,7 @@ EDITOR = /usr/bin/geany
 INDENT = /usr/bin/indent
 
 CC        = clang
-LDFLAGS   = -O
+LDFLAGS   = -o
 CFLAGS    = -Weverything -Wextra -pedantic $(LDFLAGS)
 #LDLIBS    = -lm -lgsl -lgslcblas
 LDLIBS    = $(shell gsl-config --libs)
