@@ -38,8 +38,8 @@ int main(void)
 	//TESTING
 	
 	
-	int ensembleSize = 10;
-	double avEn = 0., magnetization = 0., avMag = 0., avMag2 = 0., avMagSus = 0.;
+	int ensembleSize = 1024*128;
+	double energy = 0., magnetization = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., avMagSus = 0., avSpecHeat = 0.;
 	int thermSteps = ensembleSize / 4;
   	FILE *fp;
 		fp = fopen("results2D.dat", "w");
@@ -57,18 +57,21 @@ int main(void)
 		{
 			mc_step_per_spin(spin, boltzProbs);
 				
-			avEn += hamil(J, spin)/(XLENGTH*YLENGTH);
+			energy = hamil(J, spin)/(XLENGTH*YLENGTH);
 			magnetization = mag(spin);
+			avEn += energy;
+			avEn2 += (energy * energy);
 			avMag += magnetization;
-			avMag2 += (magnetization*magnetization);
+			avMag2 += (magnetization * magnetization);
 			
 		}
 		
 		avEn /= ensembleSize;
+		avEn2 /= ensembleSize;
 		avMag /= ensembleSize;
 		avMag2 /= ensembleSize;
 		
-		avMagSus = (avMag2-(avMag*avMag))/T;
+		avMagSus = (avMag2 - avMag * avMag)/T;
 		fprintf(fp, "%f %f %f %f\n", T, avEn, avMag, avMagSus); //statement will grow
 		printf("%f %f %f %f\n", T, avEn, avMag, avMagSus);
 	}	

@@ -16,12 +16,12 @@ void probLookUp(double T, double J, double **probs)
 
 void mc_step(int **spin, double **probs)
 {
-	unsigned long seed = (unsigned long) time(NULL);
+	unsigned long seed = ((unsigned long) time(NULL)) + 1;
 	gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2); //allocates memory for random number generator
 	gsl_rng_set(r, seed); //seeds random number generator
 	
-	int x = (int) gsl_rng_uniform(r) * XLENGTH;
-	int y = (int) gsl_rng_uniform(r) * YLENGTH;
+	int x = (int) (gsl_rng_uniform(r) * XLENGTH);
+	int y = (int) (gsl_rng_uniform(r) * YLENGTH);
 	
 	//==========Periodic-Boundary-Conditions==========
 	int xUp = (x == XLENGTH - 1) ? 0 : x + 1;
@@ -31,13 +31,12 @@ void mc_step(int **spin, double **probs)
 			
 	int deltaSpinProd = 2 * spin[x][y] * (spin[xUp][y] + spin[xDwn][y] + spin[x][yUp] + spin[x][yDwn]);
 	double prob = probs[8 + deltaSpinProd][1 + spin[x][y]]; //access look-up table
-	
 				
 	double randNum = gsl_rng_uniform(r);
-			
 	if(prob > randNum)
 	{
 		spin[x][y] *= -1;
+		//printf("In mc_step: spin flip successful!\n");
 	}
 			
 	gsl_rng_free(r);

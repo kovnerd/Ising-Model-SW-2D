@@ -26,7 +26,7 @@ double hamil(double J, int **spin)
 			
 		}
     }
-	
+	//printf("In hamil: %f\n", -J*spinProducts);
     return -J*spinProducts;
 }
 
@@ -42,15 +42,15 @@ spin[][]: array containing +/-1 to simulate a 2D configuration of spins
 //=====================================================================================
 double mag(int **spin)
 {
-        double netSpin = 0;
-        for(int x = 0; x < XLENGTH; x++)
+	double netSpin = 0;
+    for(int x = 0; x < XLENGTH; x++)
+    {
+		for(int y = 0; y < YLENGTH; y++)
         {
-                for(int y = 0; y < YLENGTH; y++)
-                {
-                        netSpin += spin[x][y];
-                }
+			netSpin += spin[x][y];
         }
-        return netSpin/((double)(XLENGTH*YLENGTH));
+    }
+	return netSpin/((double)(XLENGTH*YLENGTH));
 }
 
 
