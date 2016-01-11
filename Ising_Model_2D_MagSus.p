@@ -8,8 +8,8 @@ unset log
 unset label
 set xtic auto
 set ytic auto
-set title "Magnetic Susceptibility of a 25 2D spin lattice vs step"
+set title "Magnetic Susceptibility vs Temperature for Different Lattice sizes"
 set ylabel "Magnetic Susceptibility"
-set xlabel "step" 
-plot "results2D.dat" using 1:4 notitle with linespoint; 
+set xlabel "Temperature" 
+plot "2DSquareModelResults5x5.dat" using 1:4 title "N = 25" with lines, "2DSquareModelResults10x10.dat" using 1:4 title "N = 100" with lines, "2DSquareModelResults20x20.dat" using 1:4 title "N = 400" with lines, "2DSquareModelResults50x50.dat" using 1:4 title "N = 2500" with lines;  
 set output

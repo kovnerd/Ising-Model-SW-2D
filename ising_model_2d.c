@@ -36,7 +36,7 @@ int main(void)
 	double tmin = 2.;
 	
 	double tmax = 3.;
-	int numPoints= 50;
+	int numPoints= 250;
 	double tstep = (tmax - tmin)/numPoints;
 	//TESTING
 	
@@ -45,7 +45,7 @@ int main(void)
 	double energy = 0., magnetization = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., avMagSus = 0., avSpecHeat = 0.;
 	int thermSteps = ensembleSize / 4;
   	FILE *fp;
-		fp = fopen("results2D.dat", "w");
+		fp = fopen("2DSquareModelResults50x50.dat", "w");
 	for(double T = tmin; T < tmax; T += tstep)
 	{
 		probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
@@ -75,6 +75,8 @@ int main(void)
 		avMag2 /= ensembleSize;
 		
 		avMagSus = (avMag2 - avMag * avMag)/T;
+		avSpecHeat = (avEn2 - avEn*avEn)/(T * T);
+		
 		fprintf(fp, "%f %f %f %f\n", T, avEn, avMag, avMagSus); //statement will grow
 		printf("%f %f %f %f\n", T, avEn, avMag, avMagSus);
 	}	
