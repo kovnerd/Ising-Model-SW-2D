@@ -36,17 +36,17 @@ int main(void)
 	double tmin = 2.;
 	
 	double tmax = 3.;
-	int numPoints= 250;
+	int numPoints= 100;
 	double tstep = (tmax - tmin)/numPoints;
 	//TESTING
 	
 	
-	int ensembleSize = 1024*128;
-	double energy = 0., magnetization = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., avMagSus = 0., avSpecHeat = 0.;
+	int ensembleSize = 1024*1024;
+	double energy = 0., magnetization = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., magSus = 0., specHeat = 0.;
 	int thermSteps = ensembleSize / 4;
   	FILE *fp;
 		fp = fopen("2DSquareModelResults50x50.dat", "w");
-	for(double T = tmin; T < tmax; T += tstep)
+	for(double T = tmin; T < tmax; T += tstep)	
 	{
 		probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
 		coldStart(spin, XLENGTH, YLENGTH);
@@ -60,11 +60,11 @@ int main(void)
 		{
 			mc_step_per_spin(spin, boltzProbs, r);
 			energy = hamil(J, spin)/(XLENGTH*YLENGTH);
-			magnetization = mag(spin);
+			magnetization = fabs(mag(spin));
 			
 			avEn += energy;
 			avEn2 += (energy * energy);
-			avMag += fabs(magnetization);
+			avMag += magnetization;
 			avMag2 += (magnetization * magnetization);
 			
 		}
@@ -74,11 +74,11 @@ int main(void)
 		avMag /= ensembleSize;
 		avMag2 /= ensembleSize;
 		
-		avMagSus = (avMag2 - avMag * avMag)/T;
-		avSpecHeat = (avEn2 - avEn*avEn)/(T * T);
+		magSus = (avMag2 - avMag * avMag)/T;
+		specHeat = (avEn2 - avEn*avEn)/(T * T);
 		
-		fprintf(fp, "%f %f %f %f\n", T, avEn, avMag, avMagSus); //statement will grow
-		printf("%f %f %f %f\n", T, avEn, avMag, avMagSus);
+		fprintf(fp, "%f %f %f %f %f\n", T, avEn, avMag, magSus, specHeat); //statement will grow
+		printf("%f %f %f %f %f\n", T, avEn, avMag, magSus, specHeat);
 	}	
 	gsl_rng_free(r);
 	matrix_free_int(spin);

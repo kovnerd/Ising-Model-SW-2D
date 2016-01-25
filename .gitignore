@@ -14,10 +14,10 @@
 # Ignore all
 *
 
-# Unignore files with extensions .c, .h, .p, .pdf
+# Unignore files with extensions .c, .h, .gp, .pdf
 !*.c
 !*.h
-!*.p
+!*.gp
 !*.pdf
 
 # Unignore all dirs
