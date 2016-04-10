@@ -2,7 +2,7 @@
 
 //===================================HAMILTONIAN=====================================
 /*
- * hamil(): calculates the energy of the spin configuration
+ * hamil_per_spin(): calculates the energy per spin of the spin configuration
  * 
  * PARAMETERS:
  * 
@@ -25,7 +25,6 @@ double hamil(double J, int **spin)
 			
 		}
     }
-	//printf("In hamil: %f\n", -J*spinProducts);
     return -J*spinProducts;
 }
 
@@ -49,7 +48,7 @@ double mag(int **spin)
 			netSpin += spin[x][y];
         }
     }
-	return netSpin/((double)(XLENGTH*YLENGTH));
+	return netSpin;
 }
 
 
