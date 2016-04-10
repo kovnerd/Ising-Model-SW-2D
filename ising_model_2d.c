@@ -90,7 +90,7 @@ int main(void)
 	magLast10 = newQueue();
 	
   	FILE *fp;
-		fp = fopen("2DSquareModelResults5x5.dat", "w");
+		fp = fopen("2DSquareModelSWResults5x5.dat", "w");
 	for(double T = tmin; T < tmax; T += tstep)	 
 	{ 
 		probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
