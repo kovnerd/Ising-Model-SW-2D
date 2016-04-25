@@ -4,9 +4,9 @@
 #include "queuearray.c"
 #include "swendsen_wang.c"
 
-void coldStart(int**, int, int);
+void coldStart(int**, int***, int**, int, int);
 
-void hotStart(int**, int, int);
+void hotStart(int**,  int***, int**, int, int);
 
 double probLookUp(double, double, double**);
 
@@ -19,13 +19,15 @@ double probLookUp(double, double, double**);
  * 
  * ly: vertical length of spin[][]
  */
-void coldStart(int **spin, int lx, int ly)
+void coldStart(int **spin, int ***bonds, int **clusterLabel, int lx, int ly)
 {   
 	for(int x = 0; x < lx; x++)
 	{ 
 		for(int y = 0; y < ly; y++)
 		{
 			spin[x][y] = 1;
+			bonds[x][y][0] = bonds[x][y][1] = -1;
+			clusterLabel[x][y] = -1;
 		}
 	}
 }
@@ -39,7 +41,7 @@ void coldStart(int **spin, int lx, int ly)
  * 
  * ly: vertical length of spin[][]
  */ 
-void hotStart(int **spin, int lx, int ly)
+void hotStart(int **spin, int ***bonds, int **clusterLabel, int lx, int ly)
 {   
 	gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2);
 	unsigned long seed = ((unsigned long) time(NULL));
@@ -52,6 +54,8 @@ void hotStart(int **spin, int lx, int ly)
 		{
 			randNum = gsl_rng_uniform(r);
 			spin[x][y] = (randNum < 0.5) ? 1 : -1;
+			bonds[x][y][0] = bonds[x][y][1] = -1;
+			clusterLabel[x][y] = -1;
 		}
 	}
 	
@@ -78,13 +82,6 @@ int main(void)
 	double **boltzProbs = matrix_allocate_double(17, 3);
 	int **clusterLabel = matrix_allocate_int(XLENGTH,YLENGTH);
 	int ***bonds = matrix3d_allocate_int(XLENGTH,YLENGTH, 2);
-	for(int x = 0; x < XLENGTH; x++)
-		for(int y = 0; y < YLENGTH; y++)
-		{
-			bonds[x][y][0] = 0;
-			bonds[x][y][1] = 0;
-			clusterLabel[x][y] = 0;
-		}
 	unsigned long seed = ((unsigned long) time(NULL));
 	gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2); //allocates memory for random number generator
 	gsl_rng_set(r, seed); //seeds random number generator
@@ -95,51 +92,32 @@ int main(void)
 	int numPoints= 100;
 	double tstep = (tmax - tmin)/numPoints;
 	int ensembleSize = 1024*128; 
-	
+	double freezeProb = 0.;
+	double doSingleSpinSweep;
 	double energy = 0., magnetization = 0., mags = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., magSus = 0., specHeat = 0., avMagLast10 = 0.;
 	int thermSteps = ensembleSize/4;
 	
-	//TESTING AREA====================
-	hotStart(spin, XLENGTH, YLENGTH);
-	double freezeProb = probLookUp(tmin, J, boltzProbs);
-	//int testSize = 32;
-	//int testTherm = testSize/4;
-	//for(int ts = 0; ts < testTherm; ts++)//thermalizes configuration 
-			swendsen_wang_step_per_spin(freezeProb, spin, clusterLabel, bonds, r);
-		//for(int n = 0; n < testSize; n++)//does metropolis sweeps when configuration is in thermal equilibrium
-		//{
-			//swendsen_wang_step_per_spin(freezeProb, spin, clusterLabel, bonds, r);
-			//energy = hamil(J, spin);
-			//avEn += energy;
-		//}
-	//avEn /= ensembleSize;
-	//printf("%f\n", avEn);
-	//TESTING AREA====================
+	Queue *magLast10;
+	magLast10 = newQueue();
 	
-	gsl_rng_free(r);
-	matrix_free_int(spin);
-	matrix_free_int(clusterLabel);
-	matrix_free_double(boltzProbs);
-	matrix3d_free_int(bonds, XLENGTH, YLENGTH);
-	
-	//Queue *magLast10;
-	//magLast10 = newQueue();
-	/*
   	FILE *fp;
 		fp = fopen("2DSquareModelSWResults5x5.dat", "w");
 	for(double T = tmin; T < tmax; T += tstep)	 
 	{ 
 		freezeProb = probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
 		if(!isEmpty(magLast10) && avMagLast10 < 0.2)//decides whether or not to hotstart or coldstart the initial spin configuration
-				hotStart(spin, XLENGTH, YLENGTH);
+				hotStart(spin, bonds, clusterLabel, XLENGTH, YLENGTH);
 		else
-			coldStart(spin, XLENGTH, YLENGTH);
+			coldStart(spin, bonds, clusterLabel, XLENGTH, YLENGTH);
 		
-		for(int ts = 0; ts < thermSteps; ts++)//thermalizes configuration 
-			swendsen_wang_step_per_spin(boltzProbs, spin, bonds, r);
-		for(int n = 0; n < ensembleSize; n++)//does metropolis sweeps when configuration is in thermal equilibrium
-		{
-			swendsen_wang_step_per_spin(freezeProb, spin, bonds, r);
+		for(int ts = 0; ts < thermSteps; ts++)//thermalizes configuration, dunno if I need this????
+			swendsen_wang_step_per_spin(freezeProb, spin, clusterLabel, bonds, r);
+		for(int n = 0; n < ensembleSize; n++)//does SW sweeps when configuration is in thermal equilibrium
+		{	//SPRINKLE IN RANDOM SPIN SWEEPS
+			doSingleSpinSweep = gsl_rng_uniform(r);
+			if(doSingleSpinSweep < 0.5)
+				mc_step_per_spin(spin, boltzProbs, r);
+			swendsen_wang_step_per_spin(freezeProb, spin, clusterLabel, bonds, r);
 			energy = hamil(J, spin);
 			mags = mag(spin);
 			magnetization = fabs(mags);
@@ -164,15 +142,13 @@ int main(void)
 		avMagLast10 += avMag;
 		
 		fprintf(fp, "%f %f %f %f %f\n", T/2.269185, avEn/(XLENGTH*YLENGTH), avMag/(XLENGTH*YLENGTH), magSus/(XLENGTH*YLENGTH), specHeat/(XLENGTH*YLENGTH));
-		printf("%f %f %f %f %f\n", T/2.269185, avEn/(XLENGTH*YLENGTH), avMag/(XLENGTH*YLENGTH), magSus/(XLENGTH*YLENGTH), specHeat/(XLENGTH*YLENGTH));
-			
+		printf("%f %f %f %f %f\n", T/2.269185, avEn/(XLENGTH*YLENGTH), avMag/(XLENGTH*YLENGTH), magSus/(XLENGTH*YLENGTH), specHeat/(XLENGTH*YLENGTH));	
 	}	
 	gsl_rng_free(r);
 	matrix_free_int(spin);
 	matrix_free_double(boltzProbs);
 	free(magLast10);
 	fclose(fp);
-	*/
 	
 	return 0;
 }
