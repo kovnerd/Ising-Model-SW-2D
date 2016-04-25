@@ -8,35 +8,37 @@ int properLabel(int i, int *labelLabel)
 	return i;
 }
 
-void swendsen_wang_step_per_spin
-
-void swendsen_wang_step(int **probs, int **spin, int ***bond, gsl_rng *r)
+void swendsen_wang_step_per_spin(double freezeProb, int **spin, int **clusterLabel, int ***bond, gsl_rng *r)
 {
-	
-	int **clusterLabel = matrix_allocate_int(XLENGTH,YLENGTH);
-	double freezeProb = 1-probs[10][0]; //aka 1-exp(-2J/(kT))
-	
+	for(int i = 0; i < XLENGTH*YLENGTH; i++)
+		swendsen_wang_step(freezeProb, spin, clusterLabel, bond, r);
+}
+
+void swendsen_wang_step(double freezeProb, int **spin, int **clusterLabel, int ***bond, gsl_rng *r)
+{
 	//Forms "physical" bonds.
-	for(int x = 0; x < XLENGTH, x++)
+	for(int x = 0; x < XLENGTH; x++)
 		for(int y = 0; y < YLENGTH; y++) 
 		{
 			int xPrev = (x == 0) ? XLENGTH - 1 : x - 1;
 			int yPrev = (y == 0) ? YLENGTH - 1 : y - 1;
 			
-			bond[x][y][0] = bond[x][y][1] = 0;
-			
-			if(spin[x][yPrev] == spin[xPrev][y] && gsl_rng_uniform() < freezeProb)
-				bond[x][y][0] == 1;
-			if(spin[x][yPrev] == spin[xPrev][y] && gsl_rng_uniform() < freezeProb)
-				bond[x][y][1] == 1;
+			if(spin[x][yPrev] == spin[xPrev][y] && gsl_rng_uniform(r) < freezeProb)
+				bond[x][y][0] = 1;
+			if(spin[x][yPrev] == spin[xPrev][y] && gsl_rng_uniform(r) < freezeProb)
+				bond[x][y][1] = 1;
+			else
+				bond[x][y][0] = bond[x][y][1] = 0;
+				
 		}
-		
 		//identifies spin clusters
-		numClusters = hk-cluster(bond, clusterLabel);
+		int numClusters = hk_cluster(bond, clusterLabel);//FIX hk_cluster!!!
 		
+		printf("%s\n","Got here");
+		/*
 		//randomly flips spin clusters
 		int clusterSpin[numClusters][2];//might have to dynamically allocate this  //1st index is the actual cluster spin, second index represents whether or not this cluster has been flipped
-		
+		int c = 0;
 		for(int x = 0; x < XLENGTH; x++)
 			for(int y = 0; y < YLENGTH; y++) 
 			{
@@ -47,36 +49,38 @@ void swendsen_wang_step(int **probs, int **spin, int ***bond, gsl_rng *r)
 					clusterSpin[c][1] = 1;//signifies that this cluster has been flipped
 				}
 				spin[x][y] = clusterSpin[c][0];//actually does the spin-flipping
-			}
-		matrix_free_int(clusterLabel);
-		
+			}*/
+			
 }
 
 
 
-int hk-cluster(int ***bond, int **clusterLabel)
+int hk_cluster(int ***bond, int **clusterLabel)//NEEDS FIXING
 {
-	int amountOfBonds = 0;
+	int amountOfBonds;
 	int label = 0, minLabel = 0, propLabel = 0;
 	int xBond[4], yBond[4];
-	int labelLabel[XLENGTH*YLENGTH]
-	for(x = 0; x < XLENGTH, x++)
+	int labelLabel[XLENGTH*YLENGTH];
+	
+	
+	for(int y = 0; y < YLENGTH; y++)
 	{
-		for(y = 0; y < YLENGTH, y++)
+		for(int x = 0; x < XLENGTH; x++)
 		{	//check neighbors for frozen bonds
+			amountOfBonds = 0;
 			int xPrev = (x == 0) ? XLENGTH - 1 : x - 1;
 			int yPrev = (y == 0) ? YLENGTH - 1 : y - 1;
 			
 			if(bond[xPrev][y][0] == 1)//check previous x
 			{
-				xBond[amountOfBonds] = xDwn;
+				xBond[amountOfBonds] = xPrev;
 				yBond[amountOfBonds] = y;
 				amountOfBonds++;	
 			}
 			if(bond[x][yPrev][1] == 1) //check previous y
 			{
 				xBond[amountOfBonds] = x;
-				yBond[amountOfBonds] = yDwn;
+				yBond[amountOfBonds] = yPrev;
 				amountOfBonds++; 
 			}
 			if(amountOfBonds == 0)//create new cluster
@@ -87,23 +91,23 @@ int hk-cluster(int ***bond, int **clusterLabel)
 			}
 			else//relabel spins with proper (aka minimum) cluster label
 			{
-				for(int b = 0; b < amountOfbonds; b++)
+				minLabel = label;
+				for(int b = 0; b < amountOfBonds; b++)//makes labels proper
 				{
 					propLabel = properLabel(clusterLabel[xBond[b]][yBond[b]], labelLabel);
 					if (minLabel > propLabel)
 						minLabel = propLabel;
 				}
-				
-				clusterLabel[x][y] = minLabel;
+				printf("%d, %d: %d\n", x, y, clusterLabel[x][y]);
+				clusterLabel[x][y] = minLabel;// SEG FAUT IS HAPPENING HERE
 				
 				for(int b = 0; b < amountOfBonds; b++)
 				{
-					iLabel = clusterLabel[xBond[b]][yBond[b]];
-					labelLabel[iLabel] = minLabel;
+					labelLabel[clusterLabel[xBond[b]][yBond[b]]] = minLabel;
 					clusterLabel[xBond[b]][yBond[b]] = minLabel;
 				}
 			}
 		}
-	}	
-	return label + 1;																																																																																					`
+	}
+	return label + 1;
 }

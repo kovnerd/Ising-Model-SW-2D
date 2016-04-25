@@ -1,7 +1,4 @@
 #include "metropolis.h"
-
-
-
 void mc_step_per_spin(int **spin, double **probs, gsl_rng *r)
 {	
 	for(int x = 0; x < XLENGTH; x++)
