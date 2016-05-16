@@ -75,6 +75,7 @@ int main(void)
 	double **boltzProbs = matrix_allocate_double(17,3);
 	int ***bonds = matrix3d_allocate_int(XLENGTH,YLENGTH, 2);
 	int **clusterLabel = matrix_allocate_int(XLENGTH,YLENGTH);
+	int *labelLabel = malloc((unsigned long) XLENGTH*YLENGTH * sizeof(int));
 	unsigned long seed = ((unsigned long) time(NULL));
 	gsl_rng *r = gsl_rng_alloc(gsl_rng_taus2); //allocates memory for random number generator
 	gsl_rng_set(r, seed); //seeds random number generator
@@ -89,10 +90,10 @@ int main(void)
 	double doSingleSpinSweep;
 	double energy = 0., magnetization = 0., mags = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., magSus = 0., specHeat = 0., avMagLast10 = 0.;
 	int thermSteps = ensembleSize/4;
-	//TESTING AREA
+	/*TESTING AREA
 	freezeProb = probLookUp(tmin, J, boltzProbs);
 	coldStart(spin, XLENGTH, YLENGTH);
-	swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, r);
+	swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, labelLabel, r);
 	
 	energy = hamil(J, spin);
 	mags = mag(spin);
@@ -107,8 +108,9 @@ int main(void)
 	matrix_free_double(boltzProbs);
 	matrix3d_free_int(bonds, XLENGTH, YLENGTH);
 	matrix_free_int(clusterLabel);
+	free(labelLabel);
+	*/
 	
-	/*
 	Queue *magLast10;
 	magLast10 = newQueue();
   	FILE *fp;
@@ -122,13 +124,13 @@ int main(void)
 			coldStart(spin, XLENGTH, YLENGTH);
 		
 		for(int ts = 0; ts < thermSteps; ts++)//thermalizes configuration
-			swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, r);
+			swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, labelLabel, r);
 		for(int n = 0; n < ensembleSize; n++)//does SW sweeps when configuration is in thermal equilibrium
 		{	//SPRINKLE IN RANDOM SPIN SWEEPS
-			doSingleSpinSweep = gsl_rng_uniform(r);
+			/*doSingleSpinSweep = gsl_rng_uniform(r);
 			if(doSingleSpinSweep < 0.3)
-				mc_step_per_spin(spin, boltzProbs, r);
-			swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, r);
+				mc_step_per_spin(spin, boltzProbs, r);*/
+			swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, labelLabel, r);
 			energy = hamil(J, spin);
 			mags = mag(spin);
 			magnetization = fabs(mags);
@@ -160,8 +162,9 @@ int main(void)
 	matrix_free_double(boltzProbs);
 	matrix3d_free_int(bonds, XLENGTH, YLENGTH);
 	matrix_free_int(clusterLabel);
+	free(labelLabel);
 	free(magLast10);
 	fclose(fp);
-	*/
+	
 	return 0;
 }

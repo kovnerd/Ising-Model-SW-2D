@@ -8,9 +8,8 @@ int properLabel(int i, int *labelLabel)
 	return i;
 }
 
-void swendsen_wang_step(double freezeProb, int **spin, int ***bonds, int **clusterLabel, gsl_rng *r)
+void swendsen_wang_step(double freezeProb, int **spin, int ***bonds, int **clusterLabel, int* labelLabel, gsl_rng *r)
 {
-	int *labelLabel;
 	/*
 	 * Forms "physical" bonds.
 	 */ 
@@ -29,7 +28,7 @@ void swendsen_wang_step(double freezeProb, int **spin, int ***bonds, int **clust
 	/*
 	 * identifies spin clusters
 	 */
-	labelLabel = hk_cluster(bonds, clusterLabel);
+	hk_cluster(bonds, clusterLabel, labelLabel);
 		
 	int numClusters = 1;
 	for(int x = 0; x < XLENGTH; x++)
@@ -45,7 +44,7 @@ void swendsen_wang_step(double freezeProb, int **spin, int ***bonds, int **clust
 	 * randomly flips spin clusters
 	 */ 
 	 //1st index is the actual cluster spin, second index represents whether or not this cluster has been flipped
-	int **clusterSpin = matrix_allocate_int(numClusters, 2);
+	int clusterSpin[numClusters][2];
 	for(int x = 0; x < XLENGTH; x++)
 		for(int y = 0; y < YLENGTH; y++) 
 		{
@@ -72,18 +71,16 @@ void swendsen_wang_step(double freezeProb, int **spin, int ***bonds, int **clust
 			if(y == YLENGTH - 1)
 				printf("\n");
 		}*/
-	matrix_free_int(clusterSpin);
-	free(labelLabel);
 }
 
 
 
-int* hk_cluster(int ***bonds, int **clusterLabel)
+void hk_cluster(int ***bonds, int **clusterLabel, int* labelLabel)
 {
 	int amountOfBonds;
 	int label = 0;
 	int xBond[4], yBond[4];
-	int *labelLabel = malloc((unsigned long) (XLENGTH*YLENGTH) * sizeof(int));
+		
 	for(int x = 0; x < XLENGTH; x++)
 	{
 		for(int y = 0; y < YLENGTH; y++)
@@ -138,7 +135,4 @@ int* hk_cluster(int ***bonds, int **clusterLabel)
 			}
 		}
 	}
-	
-	
-	return labelLabel;
 }
