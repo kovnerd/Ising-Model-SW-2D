@@ -7,8 +7,8 @@ void mc_step_per_spin(int **spin, double **probs, gsl_rng *r)
 		{
 			//==========Periodic-Boundary-Conditions==========
 			int xUp = (x == XLENGTH - 1) ? 0 : x + 1;
-			int xDwn = (x == 0) ? XLENGTH - 1 : x - 1;
 			int yUp = (y == YLENGTH - 1) ? 0 : y + 1;
+			int xDwn = (x == 0) ? XLENGTH - 1 : x - 1;
 			int yDwn = (y == 0) ? YLENGTH - 1: y - 1;
 			
 			int deltaSpinProd = 2 * spin[x][y] * (spin[xUp][y] + spin[xDwn][y] + spin[x][yUp] + spin[x][yDwn]);
