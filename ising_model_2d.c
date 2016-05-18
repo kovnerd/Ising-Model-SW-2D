@@ -85,11 +85,12 @@ int main(void)
 	double tmax = 3.;
 	int numPoints= 100;
 	double tstep = (tmax - tmin)/numPoints;
-	int ensembleSize = 1024*128; 
+	int mcSteps = 1024*128; 
 	double freezeProb = 0.;
 	double doSingleSpinSweep;
 	double energy = 0., magnetization = 0., mags = 0., avEn = 0., avEn2 = 0., avMag = 0., avMag2 = 0., magSus = 0., specHeat = 0., avMagLast10 = 0.;
-	int thermSteps = ensembleSize/4;
+	int thermSteps = mcSteps/4;
+	int ensembleSize = mcSteps-thermSteps;
 	/*TESTING AREA
 	freezeProb = probLookUp(tmin, J, boltzProbs);
 	coldStart(spin, XLENGTH, YLENGTH);
@@ -114,7 +115,7 @@ int main(void)
 	Queue *magLast10;
 	magLast10 = newQueue();
   	FILE *fp;
-		fp = fopen("2DSquareModelSWResults5x5.dat", "w");
+		fp = fopen("2DSquareModelSWResults50x50.dat", "w");
 	for(double T = tmin; T < tmax; T += tstep)	 
 	{ 
 		freezeProb = probLookUp(T, J, boltzProbs); //updates lookup table for boltzmann probabilities
@@ -124,13 +125,14 @@ int main(void)
 			coldStart(spin, XLENGTH, YLENGTH);
 		
 		for(int ts = 0; ts < thermSteps; ts++)//thermalizes configuration
-			swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, labelLabel, r);
+			mc_step_per_spin(spin, boltzProbs, r);
 		for(int n = 0; n < ensembleSize; n++)//does SW sweeps when configuration is in thermal equilibrium
 		{	//SPRINKLE IN RANDOM SPIN SWEEPS
-			/*doSingleSpinSweep = gsl_rng_uniform(r);
-			if(doSingleSpinSweep < 0.3)
-				mc_step_per_spin(spin, boltzProbs, r);*/
+			doSingleSpinSweep = gsl_rng_uniform(r);
+			if(doSingleSpinSweep < 0.5)
+				mc_step_per_spin(spin, boltzProbs, r);
 			swendsen_wang_step(freezeProb, spin, bonds, clusterLabel, labelLabel, r);
+			
 			energy = hamil(J, spin);
 			mags = mag(spin);
 			magnetization = fabs(mags);

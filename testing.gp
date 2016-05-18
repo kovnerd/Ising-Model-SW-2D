@@ -11,5 +11,5 @@ set ytic auto
 set title "Magnetic Susceptibility vs Temperature for Different Lattice sizes"
 set ylabel "Magnetic Susceptibility"
 set xlabel "Temperature" 
-plot "2DSquareModelSWResults5x5.dat" using 1:3 title "L = 5" with lines;  
+plot "2DSquareModelSWResults5x5.dat" using 1:4 title "L = 5" with lines;  
 set output
